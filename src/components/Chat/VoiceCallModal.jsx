@@ -4,7 +4,7 @@ import { db } from '../../firebase/config';
 import { doc, updateDoc, onSnapshot, serverTimestamp, addDoc, collection, setDoc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
 
 const VoiceCallModal = ({ isOpen, onClose, group }) => {
-  const { userId, username, profilePic } = useAuth();
+  const { userId, username, profilePic, showNotification } = useAuth();
   const [callDuration, setCallDuration] = useState(0);
   const [activeParticipants, setActiveParticipants] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
@@ -18,7 +18,11 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
   const iceConfig = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' }
+      { urls: 'stun:stun1.l.google.com:19302' },
+      // To make calls work across different networks (e.g. Home vs 4G), 
+      // you need to add a TURN server here. 
+      // Example: 
+      // { urls: 'turn:YOUR_TURN_SERVER_URL', username: 'YOUR_USERNAME', credential: 'YOUR_PASSWORD' }
     ]
   };
 
@@ -141,7 +145,15 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
     };
 
     pc.ontrack = (event) => {
+      console.log(`Received remote track from ${targetUserId}`);
       setRemoteStreams(prev => ({ ...prev, [targetUserId]: event.streams[0] }));
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log(`ICE Connection State with ${targetUserId}: ${pc.iceConnectionState}`);
+      if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+        console.warn(`ICE connection failed for ${targetUserId}. This usually indicates a Firewall/NAT issue that requires a TURN server.`);
+      }
     };
 
     if (isInitiator) {
