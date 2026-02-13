@@ -1,11 +1,12 @@
+import React, { memo, useCallback } from 'react';
 import { db } from '../../firebase/config';
-import { doc, updateDoc, increment } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 
-const MessageItem = ({ message, isOwn, onReply }) => {
+const MessageItem = memo(({ message, isOwn, onReply }) => {
   const { userId } = useAuth();
   
-  const formatTime = (date) => {
+  const formatTime = useCallback((date) => {
     if (!date) return '';
     const d = date.toDate ? date.toDate() : new Date(date);
     return new Intl.DateTimeFormat('en-US', {
@@ -13,28 +14,25 @@ const MessageItem = ({ message, isOwn, onReply }) => {
       minute: '2-digit',
       hour12: true
     }).format(d);
-  };
+  }, []);
 
-  const handleReaction = async (emoji) => {
+  const handleReaction = useCallback(async (emoji) => {
     try {
       const msgRef = doc(db, 'messages', message.id);
       const currentReactions = { ...(message.reactions || {}) };
       const isReactedWithSame = currentReactions[emoji]?.includes(userId);
 
-      // 1. Remove user from ALL existing reactions on this message
       Object.keys(currentReactions).forEach(key => {
         if (currentReactions[key]) {
           currentReactions[key] = currentReactions[key].filter(id => id !== userId);
         }
       });
 
-      // 2. If it wasn't the same emoji, add the user to the new emoji
       if (!isReactedWithSame) {
         if (!currentReactions[emoji]) currentReactions[emoji] = [];
         currentReactions[emoji].push(userId);
       }
 
-      // Cleanup: remove keys with empty arrays to keep Firestore clean
       const cleanedReactions = {};
       Object.entries(currentReactions).forEach(([key, users]) => {
         if (users && users.length > 0) {
@@ -48,7 +46,7 @@ const MessageItem = ({ message, isOwn, onReply }) => {
     } catch (error) {
       console.error("Error updating reaction:", error);
     }
-  };
+  }, [message.id, message.reactions, userId]);
 
   const renderMedia = () => {
     if (!message.mediaUrl) return null;
@@ -140,7 +138,6 @@ const MessageItem = ({ message, isOwn, onReply }) => {
         </div>
       )}
       <div className="group relative max-w-[85%] sm:max-w-[70%]" id={`msg-${message.id}`}>
-        {/* Reply Bubble */}
         {message.replyTo && (
           <div 
             onClick={() => {
@@ -186,7 +183,6 @@ const MessageItem = ({ message, isOwn, onReply }) => {
             )}
           </div>
 
-          {/* Hidden Interaction Buttons (Visible on hover) */}
           <div className={`absolute top-0 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center space-x-1 ${
             isOwn ? 'right-full mr-2' : 'left-full ml-2'
           }`}>
@@ -214,7 +210,6 @@ const MessageItem = ({ message, isOwn, onReply }) => {
           </div>
         </div>
 
-        {/* Reaction Chips */}
         {message.reactions && Object.entries(message.reactions).some(([_, users]) => users && users.length > 0) && (
           <div className={`flex flex-wrap gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
             {Object.entries(message.reactions).map(([emoji, users]) => users && users.length > 0 && (
@@ -236,6 +231,6 @@ const MessageItem = ({ message, isOwn, onReply }) => {
       </div>
     </div>
   );
-};
+});
 
 export default MessageItem;

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo, useCallback } from 'react';
 import { db } from '../../firebase/config';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
@@ -6,7 +6,7 @@ import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 import { uploadToCloudinary } from '../../utils/cloudinary';
 
-const MessageInput = ({ groupId, replyingTo, setReplyingTo }) => {
+const MessageInput = memo(({ groupId, replyingTo, setReplyingTo }) => {
   const [text, setText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -30,7 +30,7 @@ const MessageInput = ({ groupId, replyingTo, setReplyingTo }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSendMessage = async (e, mediaData = null) => {
+  const handleSendMessage = useCallback(async (e, mediaData = null) => {
     if (e) e.preventDefault();
     if (!text.trim() && !mediaData) return;
     if (!groupId) return;
@@ -40,7 +40,6 @@ const MessageInput = ({ groupId, replyingTo, setReplyingTo }) => {
     }
 
     try {
-      // Structure strictly matches the storage requirements
       const messageData = {
         text: text.trim(),
         senderId: userId,
@@ -65,13 +64,12 @@ const MessageInput = ({ groupId, replyingTo, setReplyingTo }) => {
       setShowEmojiPicker(false);
       setReplyingTo(null);
       
-      // Add to Firestore
       await addDoc(collection(db, 'messages'), messageData);
     } catch (error) {
       console.error("Error sending message:", error);
       showNotification("Failed to send message.", 'error');
     }
-  };
+  }, [text, groupId, username, userId, profilePic, replyingTo, setReplyingTo, showNotification]);
 
   const startRecording = async () => {
     try {
@@ -294,6 +292,6 @@ const MessageInput = ({ groupId, replyingTo, setReplyingTo }) => {
       </form>
     </div>
   );
-};
+});
 
 export default MessageInput;

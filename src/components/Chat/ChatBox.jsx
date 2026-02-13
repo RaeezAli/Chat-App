@@ -1,20 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
 import { db } from '../../firebase/config';
 import { collection, query, orderBy, onSnapshot, where, doc } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
+import { useChat } from '../../context/ChatContext';
 import MessageItem from './MessageItem';
 import MessageInput from './MessageInput';
 import GroupInfoModal from './GroupInfoModal';
 import VoiceCallModal from './VoiceCallModal';
 
-const ChatBox = ({ activeGroup, onBack, onLeaveOrDelete }) => {
+const ChatBox = memo(({ onBack }) => {
+  const { activeGroup, handleLeaveOrDelete } = useChat();
   const [messages, setMessages] = useState([]);
   const [liveGroup, setLiveGroup] = useState(activeGroup);
   const [showInfo, setShowInfo] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showCallModal, setShowCallModal] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
-  const { user, username, userId, showNotification } = useAuth();
+  const { userId, showNotification } = useAuth();
   const scrollRef = useRef(null);
   const menuRef = useRef(null);
 
@@ -255,6 +257,6 @@ const ChatBox = ({ activeGroup, onBack, onLeaveOrDelete }) => {
       />
     </div>
   );
-};
+});
 
 export default ChatBox;
