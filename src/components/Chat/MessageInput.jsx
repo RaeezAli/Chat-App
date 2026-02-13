@@ -18,6 +18,7 @@ const MessageInput = memo(({ groupId, replyingTo, setReplyingTo }) => {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
+  const isCancelledRef = useRef(false);
 
   // Close picker when clicking outside
   useEffect(() => {
@@ -77,6 +78,7 @@ const MessageInput = memo(({ groupId, replyingTo, setReplyingTo }) => {
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
+      isCancelledRef.current = false;
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -85,6 +87,14 @@ const MessageInput = memo(({ groupId, replyingTo, setReplyingTo }) => {
       };
 
       mediaRecorder.onstop = async () => {
+        // Stop all tracks to release microphone
+        stream.getTracks().forEach(track => track.stop());
+
+        if (isCancelledRef.current) {
+          console.log("Recording cancelled, discarding chunks.");
+          return;
+        }
+
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const file = new File([audioBlob], "voice_message.webm", { type: 'audio/webm' });
         
@@ -98,9 +108,6 @@ const MessageInput = memo(({ groupId, replyingTo, setReplyingTo }) => {
         } finally {
           setIsUploading(false);
         }
-        
-        // Stop all tracks to release microphone
-        stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorder.start();
@@ -230,7 +237,10 @@ const MessageInput = memo(({ groupId, replyingTo, setReplyingTo }) => {
               <span className="text-sm font-medium text-red-600 dark:text-red-400 flex-grow">Recording... {formatDuration(recordingDuration)}</span>
               <button 
                 type="button"
-                onClick={() => { setIsRecording(false); clearInterval(timerRef.current); stopRecording(); }}
+                onClick={() => { 
+                  isCancelledRef.current = true; 
+                  stopRecording(); 
+                }}
                 className="text-xs font-bold text-gray-500 hover:text-red-600 uppercase tracking-wider"
               >
                 Cancel
