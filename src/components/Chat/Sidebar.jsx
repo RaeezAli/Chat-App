@@ -97,7 +97,7 @@ const Sidebar = memo(() => {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [userId]);
 
   const copyInviteCode = useCallback((e, code) => {
     e.stopPropagation();
