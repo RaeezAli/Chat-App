@@ -8,6 +8,13 @@ const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`;
 
 export const uploadToCloudinary = async (file) => {
+  if (!CLOUD_NAME || !UPLOAD_PRESET) {
+    const missing = [];
+    if (!CLOUD_NAME) missing.push('VITE_CLOUDINARY_CLOUD_NAME');
+    if (!UPLOAD_PRESET) missing.push('VITE_CLOUDINARY_UPLOAD_PRESET');
+    throw new Error(`Missing Environment Variables: ${missing.join(', ')}. Please add them to your Vercel project settings.`);
+  }
+
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', UPLOAD_PRESET);
@@ -19,7 +26,8 @@ export const uploadToCloudinary = async (file) => {
     });
 
     if (!response.ok) {
-      throw new Error('Cloudinary upload failed');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || 'Cloudinary upload failed (Check if Cloud Name and Preset are correct)');
     }
 
     const data = await response.json();
