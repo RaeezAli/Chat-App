@@ -1,16 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../../firebase/config';
-import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, where, doc } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 import MessageItem from './MessageItem';
 import MessageInput from './MessageInput';
 import GroupInfoModal from './GroupInfoModal';
+import VoiceCallModal from './VoiceCallModal';
 
 const ChatBox = ({ activeGroup, onBack, onLeaveOrDelete }) => {
   const [messages, setMessages] = useState([]);
+  const [liveGroup, setLiveGroup] = useState(activeGroup);
   const [showInfo, setShowInfo] = useState(false);
-  const { user } = useAuth();
+  const [showMenu, setShowMenu] = useState(false);
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const { user, username, userId, showNotification } = useAuth();
   const scrollRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     if (!activeGroup?.id) {
@@ -42,12 +48,38 @@ const ChatBox = ({ activeGroup, onBack, onLeaveOrDelete }) => {
     }, (error) => {
       console.error("Message Fetch Error:", error);
       if (error.code === 'failed-precondition') {
-        alert("A Firestore index is required for this group. Please check the console for the creation link.");
+        showNotification("A Firestore index is required. Check console.", 'error');
       }
     });
 
     return () => unsubscribe();
   }, [activeGroup?.id]);
+
+  // Listen to active group metadata for real-time call status
+  useEffect(() => {
+    if (!activeGroup?.id) return;
+    
+    // Sync liveGroup immediately when activeGroup prop changes
+    setLiveGroup(activeGroup);
+
+    const unsubscribe = onSnapshot(doc(db, 'groups', activeGroup.id), (snapshot) => {
+      if (snapshot.exists()) {
+        setLiveGroup({ id: snapshot.id, ...snapshot.data() });
+      }
+    });
+
+    return () => unsubscribe();
+  }, [activeGroup?.id]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -72,9 +104,9 @@ const ChatBox = ({ activeGroup, onBack, onLeaveOrDelete }) => {
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-gray-50 dark:bg-gray-900 overflow-hidden md:rounded-2xl shadow-2xl border-x md:border border-gray-200 dark:border-gray-700">
-      {/* Chat Header */}
-      <div className="p-3 sm:p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shadow-sm sticky top-0 z-30">
+    <div className="flex flex-col h-full w-full bg-gray-50 dark:bg-gray-900 overflow-hidden md:rounded-2xl shadow-2xl md:border md:border-gray-200 dark:md:border-gray-700">
+      {/* Chat Header - Fixed */}
+      <div className="p-3 sm:p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shadow-sm z-30 flex-shrink-0">
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
           <button 
             onClick={onBack}
@@ -89,8 +121,12 @@ const ChatBox = ({ activeGroup, onBack, onLeaveOrDelete }) => {
             onClick={() => setShowInfo(true)}
             className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 p-1 rounded-lg transition-all min-w-0"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-lg shadow-md border-2 border-white dark:border-gray-800">
-              {activeGroup.name.charAt(0).toUpperCase()}
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-lg shadow-md border-2 border-white dark:border-gray-800 overflow-hidden">
+              {liveGroup?.groupPic ? (
+                <img src={liveGroup.groupPic} alt={liveGroup.name} className="w-full h-full object-cover" />
+              ) : (
+                activeGroup.name.charAt(0).toUpperCase()
+              )}
             </div>
             <div className="min-w-0">
               <h3 className="font-bold text-gray-900 dark:text-white truncate text-sm sm:text-base">{activeGroup.name}</h3>
@@ -99,21 +135,82 @@ const ChatBox = ({ activeGroup, onBack, onLeaveOrDelete }) => {
           </div>
         </div>
         
-        <div className="flex items-center space-x-1 sm:space-x-2">
+        <div className="flex items-center space-x-1 sm:space-x-2 relative" ref={menuRef}>
           <div className="hidden sm:block text-right mr-2">
             <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Invite Code</p>
             <p className="text-sm font-mono font-bold text-indigo-600 dark:text-indigo-400">{activeGroup.inviteCode}</p>
           </div>
-          <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+          <div className="flex items-center space-x-1">
+            {liveGroup?.currentCall?.active && !showCallModal && (
+              <button 
+                onClick={() => setShowCallModal(true)}
+                className="flex items-center space-x-2 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-full text-[10px] font-bold uppercase tracking-wider animate-pulse shadow-lg shadow-green-500/20"
+              >
+                <div className="w-2 h-2 bg-white rounded-full" />
+                <span>Join Call</span>
+              </button>
+            )}
+            
+            <button 
+              onClick={() => setShowCallModal(true)}
+              className={`p-2 transition-colors rounded-full ${
+                liveGroup?.currentCall?.active 
+                  ? 'text-green-500 hover:bg-green-50' 
+                  : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
+              }`}
+              title={liveGroup?.currentCall?.active ? "Active Call" : "Start Call"}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+            </button>
+          </div>
+
+          <button 
+            onClick={() => setShowMenu(!showMenu)}
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
             </svg>
           </button>
+
+          {showMenu && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+              <button 
+                onClick={() => { setShowInfo(true); setShowMenu(false); }}
+                className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center space-x-2 transition-colors"
+              >
+                <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Group Info</span>
+              </button>
+              <button 
+                onClick={() => { navigator.clipboard.writeText(activeGroup.inviteCode || ''); showNotification('Invite code copied!', 'success'); setShowMenu(false); }}
+                className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center space-x-2 border-t border-gray-50 dark:border-gray-700 transition-colors"
+              >
+                <svg className="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                </svg>
+                <span>Copy Invite Code</span>
+              </button>
+              <button 
+                onClick={() => { setShowInfo(true); setShowMenu(false); }}
+                className="w-full text-left px-4 py-3 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 flex items-center space-x-2 border-t border-gray-50 dark:border-gray-700 transition-colors font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Leave Group</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-grow overflow-y-auto p-4 space-y-2 scrollbar-hide">
+      {/* Messages Area - Scrollable */}
+      <div className="flex-grow overflow-y-auto overflow-x-hidden p-4 space-y-2 custom-scrollbar min-h-0">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-50 space-y-4">
              <p className="font-medium">Welcome to {activeGroup.name}!</p>
@@ -124,15 +221,28 @@ const ChatBox = ({ activeGroup, onBack, onLeaveOrDelete }) => {
             <MessageItem 
               key={msg.id} 
               message={msg} 
-              isOwn={msg.senderId === user.uid} 
+              isOwn={msg.senderId === userId} 
+              onReply={() => setReplyingTo(msg)}
             />
           ))
         )}
         <div ref={scrollRef} />
       </div>
 
-      {/* Message Input */}
-      <MessageInput groupId={activeGroup.id} />
+      {/* Message Input - Fixed */}
+      <div className="flex-shrink-0">
+        <MessageInput 
+          groupId={activeGroup.id} 
+          replyingTo={replyingTo}
+          setReplyingTo={setReplyingTo}
+        />
+      </div>
+
+      <VoiceCallModal 
+        isOpen={showCallModal} 
+        onClose={() => setShowCallModal(false)}
+        group={liveGroup}
+      />
 
       <GroupInfoModal 
         isOpen={showInfo} 

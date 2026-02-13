@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { db } from '../../firebase/config';
-import { collection, query, where, getDocs, updateDoc, arrayUnion, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, updateDoc, arrayUnion, doc, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 
 const JoinGroupModal = ({ isOpen, onClose }) => {
   const [inviteCode, setInviteCode] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user, username } = useAuth();
+  const { user, username, userId, showNotification } = useAuth();
 
   const handleJoin = async (e) => {
     e.preventDefault();
     if (!inviteCode.trim() || loading) return;
 
-    if (!user) {
-      alert("You must be signed in to join a group. Please wait a moment or refresh the page.");
+    if (!userId) {
+      showNotification("You must have a user profile to join a group.", 'error');
       return;
     }
 
@@ -23,15 +23,15 @@ const JoinGroupModal = ({ isOpen, onClose }) => {
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        alert("Invalid invite code.");
+        showNotification("Invalid invite code.", 'error');
       } else {
         const groupDoc = querySnapshot.docs[0];
         const groupData = groupDoc.data();
         const groupRef = doc(db, 'groups', groupDoc.id);
 
         // Check if user is already a member
-        if (groupData.memberUids?.includes(user.uid)) {
-          alert("You are already a member of this group.");
+        if (groupData.memberUids?.includes(userId)) {
+          showNotification("You are already a member of this group.", 'warning');
           setInviteCode('');
           onClose();
           return;
@@ -39,19 +39,30 @@ const JoinGroupModal = ({ isOpen, onClose }) => {
         
         await updateDoc(groupRef, {
           members: arrayUnion({
-            uid: user.uid,
+            uid: userId,
             name: username,
             role: 'member'
           }),
-          memberUids: arrayUnion(user.uid)
+          memberUids: arrayUnion(userId)
         });
         
+        // System Announcement
+        await addDoc(collection(db, 'messages'), {
+          groupId: groupDoc.id,
+          senderId: 'system',
+          senderName: 'System',
+          text: `${username} joined the group`,
+          type: 'system',
+          createdAt: serverTimestamp()
+        });
+
+        showNotification(`Welcome to ${groupData.name}!`, 'success');
         setInviteCode('');
         onClose();
       }
     } catch (error) {
       console.error("Detailed error joining group:", error);
-      alert(`Failed to join group: ${error.message}`);
+      showNotification(`Failed to join group: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }

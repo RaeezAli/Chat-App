@@ -1,25 +1,30 @@
-import React from 'react'
+import ProfileDropdown from './Auth/ProfileDropdown'
+import Notification from './UI/Notification'
 
 const Layout = ({ children, hideHeader = false, hideFooter = false }) => {
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col w-screen overflow-hidden">
+    <div className="h-[100dvh] w-full bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden fixed inset-0">
+      <Notification />
       {!hideHeader && (
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 sticky top-0 z-10 shadow-sm flex-shrink-0">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 sticky top-0 z-[60] shadow-sm flex-shrink-0">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
             <h1 className="text-2xl font-black bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
               CHAT APP
             </h1>
-            <nav className="hidden md:block">
-              <ul className="flex space-x-6 text-sm font-semibold text-gray-600 dark:text-gray-300">
-                <li className="hover:text-indigo-500 transition-colors cursor-pointer">Dashboard</li>
-                <li className="hover:text-indigo-500 transition-colors cursor-pointer">Settings</li>
-              </ul>
-            </nav>
+            <div className="flex items-center space-x-4">
+              <nav className="hidden md:block">
+                <ul className="flex space-x-6 text-sm font-semibold text-gray-600 dark:text-gray-300">
+                  <li className="hover:text-indigo-500 transition-colors cursor-pointer">Dashboard</li>
+                  <li className="hover:text-indigo-500 transition-colors cursor-pointer">Settings</li>
+                </ul>
+              </nav>
+              <ProfileDropdown />
+            </div>
           </div>
         </header>
       )}
       
-      <main className="flex-grow flex items-stretch justify-center overflow-hidden">
+      <main className="flex-grow flex items-stretch justify-center overflow-hidden min-h-0">
         {children}
       </main>
 

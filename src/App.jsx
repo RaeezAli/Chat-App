@@ -6,7 +6,7 @@ import ChatBox from './components/Chat/ChatBox'
 import Sidebar from './components/Chat/Sidebar'
 
 const ChatContent = () => {
-  const { username } = useAuth();
+  const { isAuthModalOpen, setIsAuthModalOpen, username } = useAuth();
   const [activeGroup, setActiveGroup] = useState(null);
   const [mobileShowChat, setMobileShowChat] = useState(false);
 
@@ -21,12 +21,12 @@ const ChatContent = () => {
   };
 
   return (
-    <Layout hideHeader hideFooter>
-      <div className="flex h-[100dvh] w-full bg-white dark:bg-gray-900 overflow-hidden md:relative md:h-[90vh] md:w-[95vw] md:max-w-7xl md:mx-auto md:rounded-2xl md:shadow-2xl md:border md:border-gray-100 dark:md:border-gray-700 transition-all self-center">
+    <Layout hideFooter>
+      <div className="flex h-full w-full bg-white dark:bg-gray-900 overflow-hidden relative md:h-[90vh] md:w-[95vw] md:max-w-7xl md:mx-auto md:rounded-2xl md:shadow-2xl md:border md:border-gray-100 dark:md:border-gray-700 transition-all self-center">
         {/* Sidebar */}
         <div className={`w-full md:w-[35%] lg:w-[30%] h-full transition-all duration-300 ease-in-out ${
           mobileShowChat ? '-translate-x-full md:translate-x-0 opacity-0 md:opacity-100 flex-none' : 'translate-x-0 opacity-100'
-        } absolute md:relative z-20 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700`}>
+        } absolute inset-0 md:relative z-20 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700`}>
           <Sidebar 
             activeGroupId={activeGroup?.id} 
             onSelectGroup={handleSelectGroup} 
@@ -37,7 +37,7 @@ const ChatContent = () => {
         {/* Chat Area */}
         <div className={`w-full md:w-[65%] lg:w-[70%] h-full transition-all duration-300 ease-in-out ${
           mobileShowChat ? 'translate-x-0 opacity-100' : 'translate-x-full md:translate-x-0 opacity-0 md:opacity-100'
-        } absolute md:relative z-10 bg-gray-50 dark:bg-gray-900 flex flex-col`}>
+        } absolute inset-0 md:relative z-10 bg-gray-50 dark:bg-gray-900 flex flex-col`}>
           <ChatBox 
             activeGroup={activeGroup} 
             onBack={() => setMobileShowChat(false)} 
@@ -45,6 +45,11 @@ const ChatContent = () => {
           />
         </div>
       </div>
+
+      <UsernameModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
     </Layout>
   );
 };

@@ -19,12 +19,85 @@
 
 body {
   margin: 0;
-  min-height: 100dvh;
+  height: 100dvh;
+  width: 100vw;
   background-color: #f9fafb;
   overscroll-behavior: none;
+  overflow: hidden;
+  position: fixed;
 }
 
 #root {
-  width: 100%;
+  width: 100vw;
   height: 100dvh;
+  overflow: hidden;
 }
+
+/* Custom Scrollbar for Desktop */
+@media (min-width: 768px) {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(99, 102, 241, 0.2); /* Indigo-ish base */
+    border-radius: 20px;
+    transition: background-color 0.2s;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(99, 102, 241, 0.4);
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(129, 140, 248, 0.2);
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(129, 140, 248, 0.4);
+  }
+}
+
+/* Hide scrollbar but keep functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.break-word {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Animations */
+@keyframes slide-in-bottom {
+  0% { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes zoom-in {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-in {
+  animation-duration: 300ms;
+  animation-fill-mode: both;
+}
+
+.fade-in { animation-name: fade-in; }
+.zoom-in { animation-name: zoom-in; }
+.slide-in-from-bottom { animation-name: slide-in-bottom; }
