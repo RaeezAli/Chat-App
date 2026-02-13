@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase/config';
 import { doc, updateDoc, onSnapshot, serverTimestamp, addDoc, collection, setDoc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
+import { getIceServers } from '../../utils/iceSettings';
 
 const VoiceCallModal = ({ isOpen, onClose, group }) => {
   const { userId, username, profilePic, showNotification } = useAuth();
@@ -9,22 +10,25 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
   const [activeParticipants, setActiveParticipants] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+  const [iceServers, setIceServers] = useState([
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' }
+  ]);
 
   const [localStream, setLocalStream] = useState(null);
   const [remoteStreams, setRemoteStreams] = useState({}); // { userId: MediaStream }
   const peerConnections = React.useRef({}); // { userId: RTCPeerConnection }
   const signalingSubscriptions = React.useRef({}); // { userId: unsubscribeFn }
 
-  const iceConfig = {
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      // To make calls work across different networks (e.g. Home vs 4G), 
-      // you need to add a TURN server here. 
-      // Example: 
-      // { urls: 'turn:YOUR_TURN_SERVER_URL', username: 'YOUR_USERNAME', credential: 'YOUR_PASSWORD' }
-    ]
-  };
+  useEffect(() => {
+    if (isOpen) {
+      const fetchIce = async () => {
+        const servers = await getIceServers();
+        setIceServers(servers);
+      };
+      fetchIce();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     let timer;
@@ -133,7 +137,7 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
   }, [isOpen, localStream]);
 
   const createPeerConnection = (targetUserId, stream, isInitiator) => {
-    const pc = new RTCPeerConnection(iceConfig);
+    const pc = new RTCPeerConnection({ iceServers });
     peerConnections.current[targetUserId] = pc;
 
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
