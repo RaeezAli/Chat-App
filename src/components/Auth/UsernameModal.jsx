@@ -94,7 +94,7 @@ const UsernameModal = ({ isOpen, onClose }) => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Username..."
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white"
                 autoFocus
                 required
               />
@@ -125,7 +125,7 @@ const UsernameModal = ({ isOpen, onClose }) => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Paste User ID here..."
-                className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border ${error ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none dark:text-white`}
+                className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border ${error ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white`}
                 autoFocus
                 required
               />
