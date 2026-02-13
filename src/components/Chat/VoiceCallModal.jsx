@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase/config';
-import { doc, updateDoc, onSnapshot, serverTimestamp, addDoc, collection, setDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot, serverTimestamp, addDoc, collection, setDoc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
 
 const VoiceCallModal = ({ isOpen, onClose, group }) => {
   const { userId, username, profilePic } = useAuth();
