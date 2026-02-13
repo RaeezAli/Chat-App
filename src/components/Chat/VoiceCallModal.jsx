@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { db } from '../../firebase/config';
-import { doc, updateDoc, onSnapshot, serverTimestamp, addDoc, collection } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot, serverTimestamp, addDoc, collection, setDoc, deleteDoc, getDocs } from 'firebase/firestore';
 
 const VoiceCallModal = ({ isOpen, onClose, group }) => {
   const { userId, username, profilePic } = useAuth();
@@ -10,6 +10,18 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
 
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStreams, setRemoteStreams] = useState({}); // { userId: MediaStream }
+  const peerConnections = React.useRef({}); // { userId: RTCPeerConnection }
+  const signalingSubscriptions = React.useRef({}); // { userId: unsubscribeFn }
+
+  const iceConfig = {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+  };
+
   useEffect(() => {
     let timer;
     if (isOpen) {
@@ -17,41 +29,192 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
         setCallDuration(prev => prev + 1);
       }, 1000);
       
-      // Signaling: Join the call
-      joinCall();
+      startLocalStream();
     } else {
       setCallDuration(0);
+      stopLocalStream();
     }
 
     return () => {
       if (timer) clearInterval(timer);
-      if (isOpen) leaveCall();
+      if (isOpen) {
+        cleanupAllConnections();
+        leaveCall();
+      }
     };
   }, [isOpen]);
 
+  const startLocalStream = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setLocalStream(stream);
+      joinCall(stream);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      alert("Could not access microphone.");
+      onClose();
+    }
+  };
+
+  const stopLocalStream = () => {
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      setLocalStream(null);
+    }
+  };
+
+  const cleanupAllConnections = () => {
+    Object.values(peerConnections.current).forEach(pc => pc.close());
+    peerConnections.current = {};
+    Object.values(signalingSubscriptions.current).forEach(unsub => unsub());
+    signalingSubscriptions.current = {};
+    setRemoteStreams({});
+  };
+
   // Real-time listener for call members
   useEffect(() => {
-    if (!group?.id || !isOpen) return;
+    if (!group?.id || !isOpen || !localStream) return;
 
     const unsubscribe = onSnapshot(doc(db, 'groups', group.id), (snapshot) => {
       const data = snapshot.data();
       if (data?.currentCall?.active) {
-        setActiveParticipants(data.currentCall.participants || []);
+        const participants = data.currentCall.participants || [];
+        setActiveParticipants(participants);
+        
+        // Connect to any new participants
+        participants.forEach(p => {
+          if (p.userId !== userId && !peerConnections.current[p.userId]) {
+            createPeerConnection(p.userId, localStream, false);
+          }
+        });
+
+        // Cleanup stale connections
+        Object.keys(peerConnections.current).forEach(pId => {
+          if (!participants.some(p => p.userId === pId)) {
+            closePeerConnection(pId);
+          }
+        });
+
       } else if (isOpen) {
-        // If the call was ended for everyone (last person left)
         onClose();
       }
     });
 
     return () => unsubscribe();
-  }, [group?.id, isOpen]);
+  }, [group?.id, isOpen, localStream]);
 
-  const joinCall = async () => {
+  // Signaling listeners
+  useEffect(() => {
+    if (!isOpen || !localStream) return;
+
+    const callRef = collection(db, 'groups', group.id, 'calls');
+    const unsubscribe = onSnapshot(query(callRef, where('to', '==', userId)), (snapshot) => {
+      snapshot.docChanges().forEach(async (change) => {
+        if (change.type === 'added') {
+          const data = change.doc.data();
+          const fromId = data.from;
+
+          if (data.type === 'offer') {
+            await handleOffer(fromId, data.offer, localStream);
+          } else if (data.type === 'answer') {
+            await handleAnswer(fromId, data.answer);
+          } else if (data.type === 'candidate') {
+            await handleCandidate(fromId, data.candidate);
+          }
+        }
+      });
+    });
+
+    return () => unsubscribe();
+  }, [isOpen, localStream]);
+
+  const createPeerConnection = (targetUserId, stream, isInitiator) => {
+    const pc = new RTCPeerConnection(iceConfig);
+    peerConnections.current[targetUserId] = pc;
+
+    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        sendSignalingMessage(targetUserId, { type: 'candidate', candidate: event.candidate.toJSON() });
+      }
+    };
+
+    pc.ontrack = (event) => {
+      setRemoteStreams(prev => ({ ...prev, [targetUserId]: event.streams[0] }));
+    };
+
+    if (isInitiator) {
+      pc.onnegotiationneeded = async () => {
+        try {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          sendSignalingMessage(targetUserId, { type: 'offer', offer });
+        } catch (e) {
+          console.error("Error creating offer:", e);
+        }
+      };
+    }
+
+    return pc;
+  };
+
+  const handleOffer = async (fromId, offer, stream) => {
+    let pc = peerConnections.current[fromId];
+    if (!pc) pc = createPeerConnection(fromId, stream, false);
+
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    sendSignalingMessage(fromId, { type: 'answer', answer });
+  };
+
+  const handleAnswer = async (fromId, answer) => {
+    const pc = peerConnections.current[fromId];
+    if (pc) {
+      await pc.setRemoteDescription(new RTCSessionDescription(answer));
+    }
+  };
+
+  const handleCandidate = async (fromId, candidateData) => {
+    const pc = peerConnections.current[fromId];
+    if (pc) {
+      await pc.addIceCandidate(new RTCIceCandidate(candidateData));
+    }
+  };
+
+  const sendSignalingMessage = async (targetUserId, data) => {
+    if (!group?.id) return;
+    const callRef = collection(db, 'groups', group.id, 'calls');
+    await addDoc(callRef, {
+      ...data,
+      from: userId,
+      to: targetUserId,
+      createdAt: serverTimestamp()
+    });
+  };
+
+  const closePeerConnection = (pId) => {
+    if (peerConnections.current[pId]) {
+      peerConnections.current[pId].close();
+      delete peerConnections.current[pId];
+    }
+    setRemoteStreams(prev => {
+      const next = { ...prev };
+      delete next[pId];
+      return next;
+    });
+  };
+
+  const joinCall = async (stream) => {
     if (!group?.id) return;
     const groupRef = doc(db, 'groups', group.id);
     
     try {
-      // Get current participants to ensure we don't duplicate
+      // Cleanup old signaling messages before joining
+      const oldCalls = await getDocs(collection(db, 'groups', group.id, 'calls'));
+      oldCalls.forEach(doc => deleteDoc(doc.ref));
+
       const currentParticipants = group.currentCall?.participants || [];
       if (currentParticipants.some(p => p.userId === userId)) return;
 
@@ -65,6 +228,13 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
           active: true,
           startedBy: group.currentCall?.startedBy || userId,
           participants: newParticipants
+        }
+      });
+
+      // After updating Firestore, initiate connections to all EXISTING participants
+      currentParticipants.forEach(p => {
+        if (p.userId !== userId) {
+          createPeerConnection(p.userId, stream, true);
         }
       });
 
@@ -170,7 +340,13 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
           {/* Controls */}
           <div className="flex items-center justify-center space-x-6">
             <button 
-              onClick={() => setIsMuted(!isMuted)}
+              onClick={() => {
+                const newState = !isMuted;
+                setIsMuted(newState);
+                if (localStream) {
+                  localStream.getAudioTracks().forEach(track => track.enabled = !newState);
+                }
+              }}
               className={`p-4 rounded-full transition-all active:scale-90 ${
                 isMuted 
                   ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' 
@@ -212,6 +388,18 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Remote Audio Rendering */}
+      <div className="hidden">
+        {Object.entries(remoteStreams).map(([pId, stream]) => (
+          <audio 
+            key={pId} 
+            autoPlay 
+            ref={el => { if (el) el.srcObject = stream; }}
+            muted={!isSpeakerOn}
+          />
+        ))}
       </div>
     </div>
   );
