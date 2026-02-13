@@ -68,13 +68,8 @@ const MessageInput = ({ groupId }) => {
       const mediaData = await uploadToCloudinary(file);
       await handleSendMessage(null, mediaData);
     } catch (error) {
-      alert("Media upload failed. Using demo URL for testing...");
-      // Fallback for demo purposes if Cloudinary is not configured
-      const mockMedia = {
-        url: URL.createObjectURL(file), // Local preview fallback
-        type: file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'doc'
-      };
-      await handleSendMessage(null, mockMedia);
+      console.error("Cloudinary upload failed:", error);
+      alert(`Media upload failed. Please verify your Cloudinary settings in Vercel: ${error.message}`);
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

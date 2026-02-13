@@ -22,7 +22,7 @@ const ChatContent = () => {
 
   return (
     <Layout hideHeader hideFooter>
-      <div className="flex h-screen w-screen bg-white dark:bg-gray-900 overflow-hidden md:relative md:h-[90vh] md:w-[95vw] md:max-w-7xl md:mx-auto md:rounded-2xl md:shadow-2xl md:border md:border-gray-100 dark:md:border-gray-700 transition-all self-center">
+      <div className="flex h-[100dvh] w-full bg-white dark:bg-gray-900 overflow-hidden md:relative md:h-[90vh] md:w-[95vw] md:max-w-7xl md:mx-auto md:rounded-2xl md:shadow-2xl md:border md:border-gray-100 dark:md:border-gray-700 transition-all self-center">
         {/* Sidebar */}
         <div className={`w-full md:w-[35%] lg:w-[30%] h-full transition-all duration-300 ease-in-out ${
           mobileShowChat ? '-translate-x-full md:translate-x-0 opacity-0 md:opacity-100 flex-none' : 'translate-x-0 opacity-100'
