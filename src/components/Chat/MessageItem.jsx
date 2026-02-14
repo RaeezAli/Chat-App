@@ -1,11 +1,65 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useState, useRef, useEffect } from 'react';
 import { db } from '../../firebase/config';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 
 const MessageItem = memo(({ message, isOwn, onReply }) => {
   const { userId } = useAuth();
-  
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [showMobilePicker, setShowMobilePicker] = useState(false);
+  const touchStartPos = useRef({ x: 0, y: 0 });
+  const longPressTimer = useRef(null);
+  const isSwiping = useRef(false);
+
+  const handleTouchStart = (e) => {
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    isSwiping.current = false;
+
+    // Start long press timer for reactions
+    longPressTimer.current = setTimeout(() => {
+      if (!isSwiping.current) {
+        setShowMobilePicker(true);
+        if (navigator.vibrate) navigator.vibrate(50);
+      }
+    }, 500);
+  };
+
+  const handleTouchMove = (e) => {
+    const touch = e.touches[0];
+    const diffX = touch.clientX - touchStartPos.current.x;
+    const diffY = touch.clientY - touchStartPos.current.y;
+
+    // If moved more than 10px, it's not a long press anymore
+    if (Math.abs(diffX) > 10 || Math.abs(diffY) > 10) {
+      clearTimeout(longPressTimer.current);
+    }
+
+    // Only allow swiping right for reply (like WhatsApp)
+    if (diffX > 20 && Math.abs(diffY) < 30) {
+      isSwiping.current = true;
+      setSwipeOffset(Math.min(diffX, 80)); // Cap the visual swipe
+    }
+  };
+
+  const handleTouchEnd = () => {
+    clearTimeout(longPressTimer.current);
+    if (swipeOffset >= 60) {
+      onReply();
+      if (navigator.vibrate) navigator.vibrate(30);
+    }
+    setSwipeOffset(0);
+    isSwiping.current = false;
+  };
+
+  useEffect(() => {
+    const handleGlobalClick = () => setShowMobilePicker(false);
+    if (showMobilePicker) {
+      window.addEventListener('click', handleGlobalClick);
+    }
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, [showMobilePicker]);
+
   const formatTime = useCallback((date) => {
     if (!date) return '';
     const d = date.toDate ? date.toDate() : new Date(date);
@@ -137,7 +191,50 @@ const MessageItem = memo(({ message, isOwn, onReply }) => {
           )}
         </div>
       )}
-      <div className="group relative max-w-[85%] sm:max-w-[70%]" id={`msg-${message.id}`}>
+      <div 
+        className="group relative max-w-[85%] sm:max-w-[70%]" 
+        id={`msg-${message.id}`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ 
+          transform: swipeOffset > 0 ? `translateX(${swipeOffset}px)` : 'none',
+          transition: swipeOffset === 0 ? 'transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28)' : 'none'
+        }}
+      >
+        {/* Swipe Hint Icon (appearing behind) */}
+        {swipeOffset > 30 && (
+          <div className="absolute right-full mr-4 top-1/2 -translate-y-1/2 text-indigo-500 animate-in fade-in slide-in-from-left-2 transition-all">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+            </svg>
+          </div>
+        )}
+
+        {/* Mobile Floating Reaction Picker */}
+        {showMobilePicker && (
+          <div 
+            className={`absolute bottom-full mb-2 z-50 bg-white dark:bg-gray-800 rounded-full shadow-2xl border border-gray-100 dark:border-gray-700 p-1 flex items-center space-x-1 animate-in slide-in-from-bottom-2 fade-in duration-200 ${
+              isOwn ? 'right-0' : 'left-0'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {['👍', '❤️', '😂', '🔥', '😮', '😢'].map(emoji => (
+              <button 
+                key={emoji}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleReaction(emoji);
+                  setShowMobilePicker(false);
+                }}
+                className="p-2 text-xl hover:scale-125 transition-transform active:scale-90"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
+
         {message.replyTo && (
           <div 
             onClick={() => {
@@ -183,7 +280,7 @@ const MessageItem = memo(({ message, isOwn, onReply }) => {
             )}
           </div>
 
-          <div className={`absolute top-0 opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center space-x-1 ${
+          <div className={`absolute top-0 opacity-0 group-hover:opacity-100 transition-all duration-200 hidden sm:flex items-center space-x-1 ${
             isOwn ? 'right-full mr-2' : 'left-full ml-2'
           }`}>
              <button 
