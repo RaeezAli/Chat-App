@@ -44,7 +44,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md transform transition-all animate-in fade-in zoom-in duration-300 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md transform transition-all animate-in fade-in zoom-in duration-300 overflow-hidden border border-transparent dark:border-gray-800">
         <div className="p-8">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-bold dark:text-white">Edit Profile</h2>
@@ -59,7 +59,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
             <div className="flex flex-col items-center mb-6">
               <div 
                 onClick={() => !isUploading && fileInputRef.current?.click()}
-                className={`relative w-32 h-32 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold mb-4 shadow-xl border-4 border-white dark:border-gray-700 overflow-hidden cursor-pointer group transition-all ${isUploading ? 'opacity-50' : 'hover:scale-105'}`}
+                className={`relative w-32 h-32 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold mb-4 shadow-xl border-4 border-white dark:border-gray-800 overflow-hidden cursor-pointer group transition-all ${isUploading ? 'opacity-50' : 'hover:scale-105'}`}
               >
                 {newPic ? (
                   <img src={newPic} alt="Preview" className="w-full h-full object-cover" />
@@ -95,7 +95,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white transition-all shadow-inner"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white transition-all shadow-inner"
                   placeholder="Your Name"
                   required
                 />

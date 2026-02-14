@@ -56,7 +56,7 @@ const EditGroupModal = ({ isOpen, onClose, group }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4 text-left">
-      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md transform transition-all animate-in fade-in zoom-in duration-300 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md transform transition-all animate-in fade-in zoom-in duration-300 overflow-hidden border border-transparent dark:border-gray-800">
         <div className="p-8">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-bold dark:text-white">Edit Group</h2>
@@ -71,7 +71,7 @@ const EditGroupModal = ({ isOpen, onClose, group }) => {
             <div className="flex flex-col items-center mb-6">
               <div 
                 onClick={() => !isUploading && fileInputRef.current?.click()}
-                className={`relative w-28 h-28 rounded-3xl bg-indigo-50 dark:bg-gray-700 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 cursor-pointer overflow-hidden group transition-all ${isUploading ? 'opacity-50' : 'hover:border-indigo-500'}`}
+                className={`relative w-28 h-28 rounded-3xl bg-indigo-50 dark:bg-gray-800 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700 cursor-pointer overflow-hidden group transition-all ${isUploading ? 'opacity-50' : 'hover:border-indigo-500'}`}
               >
                 {groupPic ? (
                   <img src={groupPic} alt="Group Logo" className="w-full h-full object-cover" />
@@ -105,7 +105,7 @@ const EditGroupModal = ({ isOpen, onClose, group }) => {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white shadow-inner"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white shadow-inner transition-colors"
                   required
                 />
               </div>
@@ -115,7 +115,7 @@ const EditGroupModal = ({ isOpen, onClose, group }) => {
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white resize-none shadow-inner"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white resize-none shadow-inner transition-colors"
                   rows="3"
                 />
               </div>

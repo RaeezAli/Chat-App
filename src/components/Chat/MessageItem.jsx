@@ -171,7 +171,7 @@ const MessageItem = memo(({ message, isOwn, onReply }) => {
   if (message.type === 'system') {
     return (
       <div className="flex justify-center w-full my-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div className="px-6 py-1.5 rounded-full bg-gray-200/50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 backdrop-blur-sm">
+        <div className="px-6 py-1.5 rounded-full bg-gray-200/50 dark:bg-black/50 border border-gray-100 dark:border-gray-800 backdrop-blur-sm">
           <p className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest text-center">
             {message.text}
           </p>
@@ -214,7 +214,7 @@ const MessageItem = memo(({ message, isOwn, onReply }) => {
         {/* Mobile Floating Reaction Picker */}
         {showMobilePicker && (
           <div 
-            className={`absolute bottom-full mb-2 z-50 bg-white dark:bg-gray-800 rounded-full shadow-2xl border border-gray-100 dark:border-gray-700 p-1 flex items-center space-x-1 animate-in slide-in-from-bottom-2 fade-in duration-200 ${
+            className={`absolute bottom-full mb-2 z-50 bg-white dark:bg-gray-900 rounded-full shadow-2xl border border-gray-100 dark:border-gray-800 p-1 flex items-center space-x-1 animate-in slide-in-from-bottom-2 fade-in duration-200 ${
               isOwn ? 'right-0' : 'left-0'
             }`}
             onClick={(e) => e.stopPropagation()}
@@ -242,7 +242,7 @@ const MessageItem = memo(({ message, isOwn, onReply }) => {
               if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }}
             className={`mb-[-12px] pb-3 pt-2 px-3 rounded-t-2xl opacity-80 scale-95 origin-bottom border-l-4 border-indigo-400 cursor-pointer hover:opacity-100 transition-opacity ${
-              isOwn ? 'bg-indigo-800/40 mr-4' : 'bg-gray-200 dark:bg-gray-800 ml-4'
+              isOwn ? 'bg-indigo-900/40 mr-4' : 'bg-gray-200 dark:bg-black/50 ml-4'
             }`}
           >
             <p className="text-[10px] font-bold text-indigo-400">{message.replyTo.senderName}</p>
@@ -253,7 +253,7 @@ const MessageItem = memo(({ message, isOwn, onReply }) => {
         <div className={`px-4 py-2 rounded-2xl shadow-sm relative min-w-[80px] break-words transition-all ${
           isOwn 
             ? 'bg-indigo-600 text-white rounded-tr-none shadow-indigo-500/10 hover:shadow-indigo-500/20' 
-            : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-tl-none border border-gray-100 dark:border-gray-600'
+            : 'bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-tl-none border border-gray-100 dark:border-gray-800'
         }`}>
           {!isOwn && (
             <p className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 mb-1 uppercase tracking-wider truncate">

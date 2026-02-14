@@ -91,7 +91,7 @@ const ChatBox = memo(({ onBack }) => {
 
   if (!activeGroup) {
     return (
-      <div className="flex-grow hidden md:flex items-center justify-center bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
+      <div className="flex-grow hidden md:flex items-center justify-center bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl">
         <div className="text-center p-8 max-w-sm">
           <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
              <svg className="w-10 h-10 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -106,9 +106,9 @@ const ChatBox = memo(({ onBack }) => {
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-gray-50 dark:bg-gray-900 overflow-hidden md:rounded-2xl shadow-2xl md:border md:border-gray-200 dark:md:border-gray-700">
+    <div className="flex flex-col h-full w-full bg-gray-50 dark:bg-gray-950 overflow-hidden md:rounded-2xl shadow-2xl md:border md:border-gray-200 dark:md:border-gray-800">
       {/* Chat Header - Fixed */}
-      <div className="p-3 sm:p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shadow-sm z-30 flex-shrink-0">
+      <div className="p-3 sm:p-4 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between shadow-sm z-30 flex-shrink-0">
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
           <button 
             onClick={onBack}
@@ -178,7 +178,7 @@ const ChatBox = memo(({ onBack }) => {
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
               <button 
                 onClick={() => { setShowInfo(true); setShowMenu(false); }}
                 className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 flex items-center space-x-2 transition-colors"

@@ -13,8 +13,8 @@ const GroupListItem = memo(({ group, isActive, onSelect, menuGroupId, setMenuGro
       onClick={() => onSelect(group)}
       className={`p-3 rounded-xl cursor-pointer transition-all flex items-center justify-between group relative ${
         isActive 
-          ? 'bg-indigo-50 dark:bg-indigo-900/30 border-l-4 border-indigo-600' 
-          : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+          ? 'bg-indigo-50 dark:bg-indigo-900/40 border-l-4 border-indigo-600' 
+          : 'hover:bg-gray-50 dark:hover:bg-gray-800'
       }`}
     >
       <div className="flex items-center space-x-3 min-w-0">
@@ -132,49 +132,86 @@ const Sidebar = memo(() => {
     if (action === 'join') setIsJoinOpen(true);
   }, []);
 
+  // Placeholder for new state variables that would be needed for the provided snippet
+  // These are not part of the original code and are not explicitly requested to be added.
+  // For the purpose of this edit, we assume they would be defined elsewhere if this were a full feature change.
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false); // Assuming loading state for groups
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery) return groups;
+    return groups.filter(group =>
+      group.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [groups, searchQuery]);
+
+
   return (
     <div className="w-full h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden relative">
       {/* Sidebar Header - Fixed */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col space-y-3 flex-shrink-0">
-        <h2 className="text-xl font-bold dark:text-white flex items-center">
-          <svg className="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+      <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-md sticky top-0 z-10">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold dark:text-white">Messages</h2>
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => setIsJoinOpen(true)} // Changed to setIsJoinOpen
+              className="p-2 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              title="Join Group"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+            <button 
+              onClick={() => setIsCreateOpen(true)} // Changed to setIsCreateOpen
+              className="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-lg shadow-indigo-500/30 active:scale-95"
+              title="New Group"
+            >
+              <svg className="w-5 h-5 font-bold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div className="relative group">
+          <svg className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          Groups
-        </h2>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => handleAction('create')}
-            className="flex-grow py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-all"
-          >
-            Create
-          </button>
-          <button
-            onClick={() => handleAction('join')}
-            className="flex-grow py-2 px-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-bold rounded-lg transition-all"
-          >
-            Join
-          </button>
+          <input 
+            type="text" 
+            placeholder="Search groups..." 
+            className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-800 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 dark:text-white dark:placeholder-gray-500 transition-all outline-none"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
       </div>
 
-      {/* Group List - Scrollable */}
-      <div className="flex-grow overflow-y-auto p-2 space-y-1 custom-scrollbar">
-        {groups.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">
-            <p className="text-sm">No groups joined yet.</p>
+      <div className="flex-grow overflow-y-auto custom-scrollbar p-2 space-y-1 bg-white dark:bg-gray-900">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-50">
+             <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+             <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Syncing...</p>
+          </div>
+        ) : filteredGroups.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4">
+             <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-gray-400">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+             </div>
+             <p className="text-gray-500 dark:text-gray-400 text-sm">No groups found. Create one to start chatting!</p>
           </div>
         ) : (
-          groups.map((group) => (
-            <GroupListItem
-              key={group.id}
-              group={group}
-              isActive={activeGroup?.id === group.id}
-              onSelect={handleSelectGroup}
+          filteredGroups.map(group => (
+            <GroupListItem 
+              key={group.id} 
+              group={group} 
+              isActive={activeGroup?.id === group.id} // Changed 'active' to 'isActive'
+              onSelect={handleSelectGroup} // Changed 'onClick' to 'onSelect'
               menuGroupId={menuGroupId}
               setMenuGroupId={setMenuGroupId}
               onCopyCode={copyInviteCode}
-              onDelete={handleDeleteGroup}
+              onDelete={(e) => handleDeleteGroup(e, group)} // Changed to pass event and group
             />
           ))
         )}

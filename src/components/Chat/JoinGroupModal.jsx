@@ -72,7 +72,7 @@ const JoinGroupModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md p-6 border border-transparent dark:border-gray-800">
         <h2 className="text-xl font-bold mb-4 dark:text-white">Join Group</h2>
         <form onSubmit={handleJoin} className="space-y-4">
           <div>
@@ -81,7 +81,7 @@ const JoinGroupModal = ({ isOpen, onClose }) => {
               type="text"
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value)}
-              className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-center text-xl font-mono uppercase dark:text-white"
+              className="w-full px-4 py-2 bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-center text-xl font-mono uppercase dark:text-white transition-colors"
               placeholder="ABCDEF"
               maxLength={6}
               required
@@ -91,7 +91,7 @@ const JoinGroupModal = ({ isOpen, onClose }) => {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2 px-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold rounded-xl transition-all"
+              className="flex-1 py-2 px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold rounded-xl transition-all"
             >
               Cancel
             </button>

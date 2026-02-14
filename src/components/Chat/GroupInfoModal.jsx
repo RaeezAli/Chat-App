@@ -83,7 +83,7 @@ const GroupInfoModal = ({ isOpen, onClose, group, onLeaveOrDelete }) => {
       />
       
       {/* Modal Content */}
-      <div className="absolute inset-x-0 bottom-0 sm:relative sm:inset-auto bg-white dark:bg-gray-800 rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl w-full sm:max-w-md overflow-hidden animate-in slide-in-from-bottom sm:zoom-in duration-300 transform transition-all z-10 max-h-[90vh] flex flex-col">
+      <div className="absolute inset-x-0 bottom-0 sm:relative sm:inset-auto bg-white dark:bg-gray-900 rounded-t-[2.5rem] sm:rounded-3xl shadow-2xl w-full sm:max-w-md overflow-hidden animate-in slide-in-from-bottom sm:zoom-in duration-300 transform transition-all z-10 max-h-[90vh] flex flex-col border border-transparent dark:border-gray-800">
         {/* Header/Banner */}
         <div className="relative h-24 sm:h-32 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
           <button 
@@ -95,7 +95,7 @@ const GroupInfoModal = ({ isOpen, onClose, group, onLeaveOrDelete }) => {
             </svg>
           </button>
           
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-indigo-600 shadow-xl border-4 border-white dark:border-gray-800 transform -translate-y-1 sm:translate-y-0 overflow-hidden">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white dark:bg-gray-900 rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-indigo-600 shadow-xl border-4 border-white dark:border-gray-900 transform -translate-y-1 sm:translate-y-0 overflow-hidden">
             {group.groupPic ? (
               <img src={group.groupPic} alt={group.name} className="w-full h-full object-cover" />
             ) : (
@@ -124,10 +124,10 @@ const GroupInfoModal = ({ isOpen, onClose, group, onLeaveOrDelete }) => {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-700/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-600">
+            <div className="flex items-center justify-between text-sm bg-gray-50 dark:bg-black p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
               <span className="text-gray-500 font-medium">Invite Code</span>
               <div className="flex items-center space-x-2">
-                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 px-3 py-1 bg-white dark:bg-gray-600 rounded-lg shadow-sm border border-gray-100 dark:border-gray-500 uppercase">
+                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 px-3 py-1 bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-100 dark:border-gray-800 uppercase">
                   {group.inviteCode}
                 </span>
                 <button 
@@ -148,7 +148,7 @@ const GroupInfoModal = ({ isOpen, onClose, group, onLeaveOrDelete }) => {
               <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 px-1">Members ({membersCount})</h3>
               <div className="space-y-2">
                 {group.members?.map((member) => (
-                  <div key={member.uid} className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-gray-700/50 hover:bg-white dark:hover:bg-gray-700 transition-all border border-transparent hover:border-gray-100 dark:hover:border-gray-600 shadow-sm sm:shadow-none">
+                  <div key={member.uid} className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-black hover:bg-white dark:hover:bg-gray-800 transition-all border border-transparent hover:border-gray-100 dark:hover:border-gray-800 shadow-sm sm:shadow-none">
                     <div className="flex items-center space-x-3">
                       <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-sm uppercase">
                         {member.name.charAt(0)}

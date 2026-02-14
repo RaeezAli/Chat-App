@@ -64,7 +64,7 @@ const UsernameModal = ({ isOpen, onClose }) => {
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={handleExistingUser}
-                className="py-4 px-6 bg-white dark:bg-gray-700 border-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold rounded-2xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all active:scale-95"
+                className="py-4 px-6 bg-white dark:bg-gray-800 border-2 border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold rounded-2xl hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all active:scale-95"
               >
                 Yes, login
               </button>
@@ -94,7 +94,7 @@ const UsernameModal = ({ isOpen, onClose }) => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Username..."
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white transition-colors"
                 autoFocus
                 required
               />
@@ -125,7 +125,7 @@ const UsernameModal = ({ isOpen, onClose }) => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Paste User ID here..."
-                className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border ${error ? 'border-red-500' : 'border-gray-200 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white`}
+                className={`w-full px-4 py-3 bg-gray-50 dark:bg-black border ${error ? 'border-red-500' : 'border-gray-200 dark:border-gray-800'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white transition-colors`}
                 autoFocus
                 required
               />
@@ -150,7 +150,7 @@ const UsernameModal = ({ isOpen, onClose }) => {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Profile Created!</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">Please save your unique ID to log in on other devices:</p>
-            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-200 dark:border-gray-600 relative group">
+            <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 relative group">
               <p className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400 break-all">
                 {generatedId}
               </p>
@@ -179,7 +179,7 @@ const UsernameModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md transform transition-all animate-in fade-in zoom-in duration-300 relative overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-md transform transition-all animate-in fade-in zoom-in duration-300 relative overflow-hidden border border-transparent dark:border-gray-800">
         <div className="p-8">
           <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

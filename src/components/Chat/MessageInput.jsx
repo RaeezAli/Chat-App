@@ -158,7 +158,7 @@ const MessageInput = memo(({ groupId, replyingTo, setReplyingTo }) => {
   };
 
   return (
-    <div className="relative p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+    <div className="relative p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-white dark:bg-gray-950 border-t border-gray-200 dark:border-gray-800">
       {/* Reply Preview */}
       {replyingTo && (
         <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border-l-4 border-indigo-500 flex items-center justify-between animate-in slide-in-from-bottom duration-200">
@@ -230,7 +230,7 @@ const MessageInput = memo(({ groupId, replyingTo, setReplyingTo }) => {
           )}
         </div>
 
-        <div className={`flex-grow bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center px-4 py-1 transition-all focus-within:ring-2 focus-within:ring-indigo-500 min-h-[44px] ${isRecording ? 'border-2 border-red-500 bg-red-50 dark:bg-red-900/10' : ''}`}>
+        <div className={`flex-grow bg-gray-100 dark:bg-gray-900 rounded-2xl flex items-center px-4 py-1 transition-all focus-within:ring-2 focus-within:ring-indigo-500 min-h-[44px] ${isRecording ? 'border-2 border-red-500 bg-red-50 dark:bg-red-900/10' : ''}`}>
           {isRecording ? (
             <div className="flex items-center space-x-3 w-full animate-pulse">
               <div className="w-2 h-2 rounded-full bg-red-500"></div>
