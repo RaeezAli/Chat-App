@@ -14,6 +14,7 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' }
   ]);
+  const [wasActive, setWasActive] = useState(false);
 
   const [localStream, setLocalStream] = useState(null);
   const [remoteStreams, setRemoteStreams] = useState({}); // { userId: MediaStream }
@@ -40,6 +41,7 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
       startLocalStream();
     } else {
       setCallDuration(0);
+      setWasActive(false);
       stopLocalStream();
     }
 
@@ -86,6 +88,7 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
     const unsubscribe = onSnapshot(doc(db, 'groups', group.id), (snapshot) => {
       const data = snapshot.data();
       if (data?.currentCall?.active) {
+        setWasActive(true);
         const participants = data.currentCall.participants || [];
         setActiveParticipants(participants);
         
@@ -103,7 +106,8 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
           }
         });
 
-      } else if (isOpen) {
+      } else if (isOpen && wasActive) {
+        console.log("Call ended, auto-closing modal");
         onClose();
       }
     });

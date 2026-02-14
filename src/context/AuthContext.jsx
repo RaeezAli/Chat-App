@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { auth, db } from '../firebase/config';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, writeBatch, addDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, writeBatch, addDoc, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -13,6 +13,20 @@ export const AuthProvider = ({ children }) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState(null); // { message, type: 'success' | 'error' | 'warning' }
+
+  const saveUserData = useCallback((id, name, pic = '') => {
+    localStorage.setItem('chat_userId', id);
+    localStorage.setItem('chat_username', name);
+    localStorage.setItem('chat_profilePic', pic);
+    setUserId(id);
+    setUsername(name);
+    setProfilePic(pic);
+  }, []);
+
+  const showNotification = useCallback((message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -46,7 +60,6 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, [userId, username, profilePic, saveUserData]);
 
-
   useEffect(() => {
     // If not loading and no username/userId, open modal
     if (!loading && (!username || !userId)) {
@@ -55,15 +68,6 @@ export const AuthProvider = ({ children }) => {
       setIsAuthModalOpen(false);
     }
   }, [loading, username, userId]);
-
-  const saveUserData = useCallback((id, name, pic = '') => {
-    localStorage.setItem('chat_userId', id);
-    localStorage.setItem('chat_username', name);
-    localStorage.setItem('chat_profilePic', pic);
-    setUserId(id);
-    setUsername(name);
-    setProfilePic(pic);
-  }, []);
 
   const checkUserExists = useCallback(async (id) => {
     const userDoc = await getDoc(doc(db, 'users', id));
@@ -119,11 +123,6 @@ export const AuthProvider = ({ children }) => {
     setUsername('');
     setProfilePic('');
     setIsAuthModalOpen(true);
-  }, []);
-
-  const showNotification = useCallback((message, type = 'success') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
   }, []);
 
   const updateProfile = useCallback(async (newName, newPic) => {

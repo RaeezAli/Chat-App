@@ -249,7 +249,7 @@ const ChatBox = memo(({ onBack }) => {
       <GroupInfoModal 
         isOpen={showInfo} 
         onClose={() => setShowInfo(false)} 
-        group={activeGroup}
+        group={liveGroup || activeGroup}
         onLeaveOrDelete={() => {
           setShowInfo(false);
           onLeaveOrDelete();
