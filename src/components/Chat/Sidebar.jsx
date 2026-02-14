@@ -6,6 +6,7 @@ import { useChat } from '../../context/ChatContext';
 import CreateGroupModal from './CreateGroupModal';
 import JoinGroupModal from './JoinGroupModal';
 import UsernameModal from '../Auth/UsernameModal';
+import { GroupListItemSkeleton } from '../UI/Skeleton';
 
 const GroupListItem = memo(({ group, isActive, onSelect, menuGroupId, setMenuGroupId, onCopyCode, onDelete }) => {
   return (
@@ -79,6 +80,7 @@ const Sidebar = memo(() => {
   const [menuGroupId, setMenuGroupId] = useState(null);
   const { userId, showNotification } = useAuth();
   const { activeGroup, handleSelectGroup, handleLeaveOrDelete } = useChat();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!userId) return;
@@ -94,6 +96,10 @@ const Sidebar = memo(() => {
         ...doc.data()
       }));
       setGroups(groupsList);
+      setLoading(false);
+    }, (error) => {
+      console.error("Group Fetch Error:", error);
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -136,7 +142,7 @@ const Sidebar = memo(() => {
   // These are not part of the original code and are not explicitly requested to be added.
   // For the purpose of this edit, we assume they would be defined elsewhere if this were a full feature change.
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(false); // Assuming loading state for groups
+  
   const filteredGroups = useMemo(() => {
     if (!searchQuery) return groups;
     return groups.filter(group =>
@@ -188,9 +194,10 @@ const Sidebar = memo(() => {
 
       <div className="flex-grow overflow-y-auto custom-scrollbar p-2 space-y-1 bg-white dark:bg-gray-900">
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-50">
-             <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-             <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Syncing...</p>
+          <div className="space-y-1">
+            {[...Array(6)].map((_, i) => (
+              <GroupListItemSkeleton key={i} />
+            ))}
           </div>
         ) : filteredGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4">

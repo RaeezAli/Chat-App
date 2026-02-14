@@ -7,6 +7,7 @@ import MessageItem from './MessageItem';
 import MessageInput from './MessageInput';
 import GroupInfoModal from './GroupInfoModal';
 import VoiceCallModal from './VoiceCallModal';
+import { MessageItemSkeleton } from '../UI/Skeleton';
 
 const ChatBox = memo(({ onBack }) => {
   const { activeGroup, handleLeaveOrDelete } = useChat();
@@ -15,6 +16,7 @@ const ChatBox = memo(({ onBack }) => {
   const [showInfo, setShowInfo] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showCallModal, setShowCallModal] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [replyingTo, setReplyingTo] = useState(null);
   const { userId, showNotification } = useAuth();
   const scrollRef = useRef(null);
@@ -28,6 +30,7 @@ const ChatBox = memo(({ onBack }) => {
 
     // Reset messages state strictly on group change to avoid "ghost" messages
     setMessages([]);
+    setLoading(true);
 
     const q = query(
       collection(db, 'messages'), 
@@ -47,8 +50,10 @@ const ChatBox = memo(({ onBack }) => {
         };
       });
       setMessages(msgs);
+      setLoading(false);
     }, (error) => {
       console.error("Message Fetch Error:", error);
+      setLoading(false);
       if (error.code === 'failed-precondition') {
         showNotification("A Firestore index is required. Check console.", 'error');
       }
@@ -213,7 +218,15 @@ const ChatBox = memo(({ onBack }) => {
 
       {/* Messages Area - Scrollable */}
       <div className="flex-grow overflow-y-auto overflow-x-hidden p-4 space-y-2 custom-scrollbar min-h-0">
-        {messages.length === 0 ? (
+        {loading ? (
+          <div className="space-y-4">
+            <MessageItemSkeleton isOwn={false} />
+            <MessageItemSkeleton isOwn={true} />
+            <MessageItemSkeleton isOwn={false} />
+            <MessageItemSkeleton isOwn={false} />
+            <MessageItemSkeleton isOwn={true} />
+          </div>
+        ) : messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-50 space-y-4">
              <p className="font-medium">Welcome to {activeGroup.name}!</p>
              <p className="text-xs">No messages yet.</p>

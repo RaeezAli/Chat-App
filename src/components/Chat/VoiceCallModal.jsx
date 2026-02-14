@@ -15,6 +15,7 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
     { urls: 'stun:stun1.l.google.com:19302' }
   ]);
   const [wasActive, setWasActive] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(true);
 
   const [localStream, setLocalStream] = useState(null);
   const [remoteStreams, setRemoteStreams] = useState({}); // { userId: MediaStream }
@@ -105,6 +106,26 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
             closePeerConnection(pId);
           }
         });
+        
+        // If there are other participants, we check if we have remote streams from any of them
+        // If we're the only participant, we stay in "Connecting..." until someone joins
+        const otherParticipants = participants.filter(p => p.userId !== userId);
+        if (otherParticipants.length > 0) {
+          const hasRemoteStreams = Object.keys(remoteStreams).length > 0;
+          if (hasRemoteStreams) {
+            setIsConnecting(false);
+          } else {
+            // Check if any peer connection is in 'connected' state
+            const anyConnected = Object.values(peerConnections.current).some(pc => 
+              pc.connectionState === 'connected' || pc.iceConnectionState === 'connected'
+            );
+            if (anyConnected) setIsConnecting(false);
+          }
+        } else {
+          // We are alone, stay in connecting state if we just joined, 
+          // or show "Waiting for others..." if we started it.
+          setIsConnecting(participants.length <= 1);
+        }
 
       } else if (isOpen && wasActive) {
         console.log("Call ended, auto-closing modal");
@@ -155,6 +176,14 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
     pc.ontrack = (event) => {
       console.log(`Received remote track from ${targetUserId}`);
       setRemoteStreams(prev => ({ ...prev, [targetUserId]: event.streams[0] }));
+      setIsConnecting(false);
+    };
+
+    pc.onconnectionstatechange = () => {
+      console.log(`Connection state for ${targetUserId}: ${pc.connectionState}`);
+      if (pc.connectionState === 'connected') {
+        setIsConnecting(false);
+      }
     };
 
     pc.oniceconnectionstatechange = () => {
@@ -334,8 +363,8 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
                  {group.name.charAt(0).toUpperCase()}
                </div>
             </div>
-            <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 ${isMuted ? 'bg-red-600' : 'bg-indigo-600'} text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg transition-colors`}>
-              {isMuted ? 'Muted' : 'On Call'}
+            <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 ${isMuted ? 'bg-red-600' : isConnecting ? 'bg-amber-500' : 'bg-indigo-600'} text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg transition-colors`}>
+              {isMuted ? 'Muted' : isConnecting ? 'Connecting...' : 'On Call'}
             </div>
           </div>
 
@@ -344,13 +373,19 @@ const VoiceCallModal = ({ isOpen, onClose, group }) => {
           
           <div className="flex -space-x-3 mb-8">
             {activeParticipants.map((p, i) => (
-              <div key={i} className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs font-bold shadow-sm" title={p.username}>
-                {p.username.charAt(0).toUpperCase()}
+              <div key={i} className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 shadow-lg border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400 overflow-hidden" title={p.username}>
+                {p.profilePic ? (
+                  <img src={p.profilePic} alt={p.username} className="w-full h-full object-cover" />
+                ) : (
+                  p.username.charAt(0).toUpperCase()
+                )}
               </div>
             ))}
-            <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 border-2 border-white dark:border-gray-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 text-xs font-bold">
-              +{activeParticipants.length}
-            </div>
+            {activeParticipants.length === 1 && (
+              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center text-gray-400 text-xs font-bold animate-pulse">
+                ...
+              </div>
+            )}
           </div>
 
           <p className="text-gray-500 dark:text-gray-400 text-sm mb-12">
