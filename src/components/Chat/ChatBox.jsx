@@ -127,12 +127,12 @@ const ChatBox = memo(({ onBack }) => {
               {liveGroup?.groupPic ? (
                 <img src={liveGroup.groupPic} alt={liveGroup.name} className="w-full h-full object-cover" />
               ) : (
-                activeGroup.name.charAt(0).toUpperCase()
+                liveGroup?.name?.charAt(0).toUpperCase() || '?'
               )}
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-gray-900 dark:text-white truncate text-sm sm:text-base">{activeGroup.name}</h3>
-              <p className="text-[10px] sm:text-xs text-gray-400 truncate">{activeGroup.members?.length || 0} members</p>
+              <h3 className="font-bold text-gray-900 dark:text-white truncate text-sm sm:text-base">{liveGroup?.name || activeGroup.name}</h3>
+              <p className="text-[10px] sm:text-xs text-gray-400 truncate">{liveGroup?.members?.length || activeGroup.members?.length || 0} members</p>
             </div>
           </div>
         </div>
@@ -234,7 +234,7 @@ const ChatBox = memo(({ onBack }) => {
       {/* Message Input - Fixed */}
       <div className="flex-shrink-0">
         <MessageInput 
-          groupId={activeGroup.id} 
+          groupId={liveGroup?.id || activeGroup.id} 
           replyingTo={replyingTo}
           setReplyingTo={setReplyingTo}
         />

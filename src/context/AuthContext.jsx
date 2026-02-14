@@ -16,38 +16,36 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        setLoading(false);
-      } else {
+      setUser(currentUser);
+      if (!currentUser) {
         try {
           await signInAnonymously(auth);
         } catch (error) {
           console.error("Error signing in anonymously:", error);
-          setLoading(false);
+        }
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Real-time user document listener
+  useEffect(() => {
+    if (!userId) return;
+
+    const unsubscribe = onSnapshot(doc(db, 'users', userId), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.username !== username || data.profilePic !== profilePic) {
+          saveUserData(userId, data.username, data.profilePic || '');
         }
       }
     });
 
     return () => unsubscribe();
-  }, []); // Only run once
+  }, [userId, username, profilePic, saveUserData]);
 
-  useEffect(() => {
-    const restoreUser = async () => {
-      if (userId && !username && !loading) {
-        try {
-          const userDoc = await getDoc(doc(db, 'users', userId));
-          if (userDoc.exists()) {
-            const data = userDoc.data();
-            saveUserData(userId, data.username, data.profilePic || '');
-          }
-        } catch (error) {
-          console.error("Error restoring user data:", error);
-        }
-      }
-    };
-    restoreUser();
-  }, [userId, loading]);
 
   useEffect(() => {
     // If not loading and no username/userId, open modal
