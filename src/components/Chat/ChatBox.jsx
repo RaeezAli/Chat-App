@@ -3,10 +3,10 @@ import { db } from '../../firebase/config';
 import { collection, query, orderBy, onSnapshot, where, doc } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
+import { useCall } from '../../context/CallContext';
 import MessageItem from './MessageItem';
 import MessageInput from './MessageInput';
 import GroupInfoModal from './GroupInfoModal';
-import VoiceCallModal from './VoiceCallModal';
 import { MessageItemSkeleton } from '../UI/Skeleton';
 
 const ChatBox = memo(({ onBack }) => {
@@ -15,7 +15,7 @@ const ChatBox = memo(({ onBack }) => {
   const [liveGroup, setLiveGroup] = useState(activeGroup);
   const [showInfo, setShowInfo] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [showCallModal, setShowCallModal] = useState(false);
+  const { startCall, isCallActive, toggleMinimize } = useCall();
   const [loading, setLoading] = useState(true);
   const [replyingTo, setReplyingTo] = useState(null);
   const { userId, showNotification } = useAuth();
@@ -148,9 +148,9 @@ const ChatBox = memo(({ onBack }) => {
             <p className="text-sm font-mono font-bold text-indigo-600 dark:text-indigo-400">{activeGroup.inviteCode}</p>
           </div>
           <div className="flex items-center space-x-1">
-            {liveGroup?.currentCall?.active && !showCallModal && (
+            {liveGroup?.currentCall?.active && !isCallActive && (
               <button 
-                onClick={() => setShowCallModal(true)}
+                onClick={() => startCall(liveGroup)}
                 className="flex items-center space-x-2 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-full text-[10px] font-bold uppercase tracking-wider animate-pulse shadow-lg shadow-green-500/20"
               >
                 <div className="w-2 h-2 bg-white rounded-full" />
@@ -159,9 +159,9 @@ const ChatBox = memo(({ onBack }) => {
             )}
             
             <button 
-              onClick={() => setShowCallModal(true)}
+              onClick={() => isCallActive ? toggleMinimize() : startCall(liveGroup)}
               className={`p-2 transition-colors rounded-full ${
-                liveGroup?.currentCall?.active 
+                liveGroup?.currentCall?.active || isCallActive
                   ? 'text-green-500 hover:bg-green-50' 
                   : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20'
               }`}
@@ -252,12 +252,6 @@ const ChatBox = memo(({ onBack }) => {
           setReplyingTo={setReplyingTo}
         />
       </div>
-
-      <VoiceCallModal 
-        isOpen={showCallModal} 
-        onClose={() => setShowCallModal(false)}
-        group={liveGroup}
-      />
 
       <GroupInfoModal 
         isOpen={showInfo} 

@@ -5,6 +5,8 @@ import { ChatProvider, useChat } from './context/ChatContext'
 import UsernameModal from './components/Auth/UsernameModal'
 import ChatBox from './components/Chat/ChatBox'
 import Sidebar from './components/Chat/Sidebar'
+import { CallProvider } from './context/CallContext'
+import CallOverlay from './components/Chat/CallOverlay'
 
 const ChatContent = () => {
   const { isAuthModalOpen, setIsAuthModalOpen } = useAuth();
@@ -32,6 +34,7 @@ const ChatContent = () => {
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
       />
+      <CallOverlay />
     </Layout>
   );
 };
@@ -40,7 +43,9 @@ function App() {
   return (
     <AuthProvider>
       <ChatProvider>
-        <ChatContent />
+        <CallProvider>
+          <ChatContent />
+        </CallProvider>
       </ChatProvider>
     </AuthProvider>
   )
