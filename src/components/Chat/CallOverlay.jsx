@@ -10,14 +10,11 @@ const CallOverlay = () => {
     activeParticipants, 
     isMuted, 
     isSpeakerOn, 
-    isVideoEnabled,
     isConnecting, 
-    localStream,
     remoteStreams, 
     endCall, 
     toggleMute, 
     toggleSpeaker, 
-    toggleVideo,
     toggleMinimize 
   } = useCall();
 
@@ -38,40 +35,59 @@ const CallOverlay = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleMouseDown = (e) => {
+  const handleStart = (clientX, clientY) => {
     if (!isMinimized) return;
     setIsDragging(true);
     dragStart.current = {
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
+      x: clientX + position.x,
+      y: clientY + position.y
     };
   };
 
-  const handleMouseMove = (e) => {
+  const handleMove = (clientX, clientY) => {
     if (!isDragging) return;
-    const newX = e.clientX - dragStart.current.x;
-    const newY = e.clientY - dragStart.current.y;
+    
+    // For 'right' and 'bottom' positioning:
+    // right = viewportWidth - clientX - offsetX
+    // But since we store position.x as the 'right' value:
+    const newX = dragStart.current.x - clientX;
+    const newY = dragStart.current.y - clientY;
     
     // Bounds check
-    const maxX = window.innerWidth - 100;
-    const maxY = window.innerHeight - 100;
+    const maxX = window.innerWidth - (isMobile ? 80 : 260);
+    const maxY = window.innerHeight - (isMobile ? 80 : 180);
     
     setPosition({
-      x: Math.max(0, Math.min(newX, maxX)),
-      y: Math.max(0, Math.min(newY, maxY))
+      x: Math.max(10, Math.min(newX, maxX)),
+      y: Math.max(10, Math.min(newY, maxY))
     });
   };
 
-  const handleMouseUp = () => setIsDragging(false);
+  const handleMouseDown = (e) => handleStart(e.clientX, e.clientY);
+  const handleTouchStart = (e) => handleStart(e.touches[0].clientX, e.touches[0].clientY);
+
+  const handleMouseMove = (e) => handleMove(e.clientX, e.clientY);
+  const handleTouchMove = (e) => {
+    if (isDragging) {
+      e.preventDefault(); // Prevent scrolling while dragging
+      handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  };
+
+  const handleEnd = () => setIsDragging(false);
 
   useEffect(() => {
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('mouseup', handleEnd);
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchend', handleEnd);
     }
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleEnd);
     };
   }, [isDragging]);
 
@@ -84,25 +100,16 @@ const CallOverlay = () => {
       return (
         <div 
           onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
           onClick={(e) => { if (!isDragging) toggleMinimize(); }}
           style={{ right: `${position.x}px`, bottom: `${position.y}px` }}
-          className="fixed z-[9999] cursor-move animate-in fade-in zoom-in duration-300"
+          className="fixed z-[9999] cursor-move animate-in fade-in zoom-in duration-300 touch-none"
         >
           <div className="relative group">
             <div className="w-16 h-16 rounded-full bg-indigo-600 shadow-2xl overflow-hidden border-2 border-white flex items-center justify-center">
-              {isVideoEnabled && localStream ? (
-                <video 
-                  autoPlay 
-                  muted 
-                  playsInline 
-                  ref={el => { if (el) el.srcObject = localStream; }}
-                  className="w-full h-full object-cover mirror"
-                />
-              ) : (
-                <div className="text-white font-bold text-xl">
-                  {activeCallGroup.name.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <div className="text-white font-bold text-xl">
+                {activeCallGroup.name.charAt(0).toUpperCase()}
+              </div>
               {isConnecting && (
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                   <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -120,31 +127,15 @@ const CallOverlay = () => {
     return (
       <div 
         onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
         style={{ right: `${position.x}px`, bottom: `${position.y}px` }}
-        className="fixed z-[9999] cursor-move animate-in fade-in zoom-in duration-300 w-64 h-40 group"
+        className="fixed z-[9999] cursor-move animate-in fade-in zoom-in duration-300 w-64 h-40 group touch-none"
       >
         <div className="bg-gray-900 rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-800 h-full">
           <div className="flex-1 relative bg-black flex items-center justify-center">
-            {Object.keys(remoteStreams).length > 0 ? (
-              <video 
-                autoPlay 
-                playsInline 
-                ref={el => { if (el) el.srcObject = Object.values(remoteStreams)[0]; }}
-                className="w-full h-full object-cover"
-              />
-            ) : isVideoEnabled && localStream ? (
-              <video 
-                autoPlay 
-                muted 
-                playsInline 
-                ref={el => { if (el) el.srcObject = localStream; }}
-                className="w-full h-full object-cover mirror opacity-50"
-              />
-            ) : (
-              <div className="text-white/20 text-4xl font-bold uppercase">
-                {activeCallGroup.name.charAt(0)}
-              </div>
-            )}
+            <div className="text-white/20 text-4xl font-bold uppercase">
+              {activeCallGroup.name.charAt(0)}
+            </div>
             
             {/* Controls Overlay on Hover */}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
@@ -198,52 +189,14 @@ const CallOverlay = () => {
             </button>
           </div>
 
-          <div className="relative mb-8 mt-4 w-full">
-            <div className="grid grid-cols-1 gap-4 w-full max-h-[40vh] overflow-hidden">
-               {/* Video Container Logic */}
-               <div className="relative aspect-video bg-black rounded-2xl overflow-hidden shadow-xl group border-2 border-indigo-500/30">
-                 {isVideoEnabled && localStream ? (
-                   <video 
-                     autoPlay 
-                     muted 
-                     playsInline 
-                     ref={el => { if (el) el.srcObject = localStream; }}
-                     className="w-full h-full object-cover mirror"
-                   />
-                 ) : (
-                   <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
-                     <div className="w-20 h-20 rounded-full border-4 border-white/30 flex items-center justify-center text-3xl font-bold mb-4 shadow-2xl">
-                       {activeCallGroup.name.charAt(0).toUpperCase()}
-                     </div>
-                     <span className="text-xs uppercase tracking-[0.2em] font-bold opacity-70">You</span>
-                   </div>
-                 )}
-                 <div className="absolute bottom-4 left-4 flex items-center space-x-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-                   <div className={`w-2 h-2 rounded-full ${isVideoEnabled ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-                   <span className="text-white text-[10px] font-bold tracking-wider uppercase">Local Preview</span>
-                 </div>
+          <div className="relative mb-8 mt-4">
+            <div className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 ${isMuted ? 'border-red-500' : isConnecting ? 'border-amber-500' : 'border-indigo-500'} shadow-xl animate-pulse transition-colors duration-300`}>
+               <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold">
+                 {activeCallGroup.name.charAt(0).toUpperCase()}
                </div>
-
-               {Object.entries(remoteStreams).map(([pId, stream]) => (
-                <div key={pId} className="relative aspect-video bg-black rounded-2xl overflow-hidden shadow-xl border-2 border-indigo-500/30">
-                  <video 
-                    autoPlay 
-                    playsInline 
-                    ref={el => { if (el) el.srcObject = stream; }}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute bottom-4 left-4 flex items-center space-x-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-white text-[10px] font-bold tracking-wider uppercase">
-                      {activeParticipants.find(p => p.userId === pId)?.username || 'Remote'}
-                    </span>
-                  </div>
-                </div>
-               ))}
             </div>
-
-            <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 z-10 ${isMuted ? 'bg-red-600' : isConnecting ? 'bg-amber-500' : 'bg-indigo-600'} text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-xl border-2 border-white dark:border-gray-800 transition-colors`}>
-              {isMuted ? 'Muted' : isConnecting ? 'Connecting...' : 'Active Session'}
+            <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 ${isMuted ? 'bg-red-600' : isConnecting ? 'bg-amber-500' : 'bg-indigo-600'} text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg transition-colors`}>
+              {isMuted ? 'Muted' : isConnecting ? 'Connecting...' : 'On Call'}
             </div>
           </div>
 
@@ -252,11 +205,11 @@ const CallOverlay = () => {
           
           <div className="flex -space-x-3 mb-8">
             {activeParticipants.map((p, i) => (
-              <div key={i} className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 shadow-lg border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400 overflow-hidden ring-2 ring-indigo-500/20" title={p.username}>
-                {p.profilePic ? (
-                  <img src={p.profilePic} alt={p.username} className="w-full h-full object-cover" />
+              <div key={i} className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 shadow-lg border-2 border-white dark:border-gray-800 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400 overflow-hidden ring-2 ring-indigo-500/20" title={p?.username || 'User'}>
+                {p?.profilePic ? (
+                  <img src={p.profilePic} alt={p?.username || 'User'} className="w-full h-full object-cover" />
                 ) : (
-                  p.username.charAt(0).toUpperCase()
+                  p?.username?.charAt(0).toUpperCase() || '?'
                 )}
               </div>
             ))}
@@ -266,24 +219,7 @@ const CallOverlay = () => {
             Secure end-to-end encrypted voice call.
           </p>
 
-          <div className="flex items-center justify-center space-x-4 sm:space-x-6">
-            <button 
-              onClick={toggleVideo}
-              className={`p-4 rounded-full transition-all active:scale-90 ${
-                isVideoEnabled
-                  ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-600'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-              title={isVideoEnabled ? "Turn Camera Off" : "Turn Camera On"}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isVideoEnabled ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14" />
-                )}
-              </svg>
-            </button>
+          <div className="flex items-center justify-center space-x-6">
 
             <button 
               onClick={toggleMute}
@@ -333,10 +269,10 @@ const CallOverlay = () => {
           </div>
         </div>
 
-        {/* Hidden Audio/Video Elements to keep stream alive */}
+        {/* Hidden Audio Elements to keep stream alive */}
         <div className="hidden">
           {Object.entries(remoteStreams).map(([pId, stream]) => (
-            <video 
+            <audio 
               key={pId} 
               autoPlay 
               playsInline

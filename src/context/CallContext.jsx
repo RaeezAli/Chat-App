@@ -17,7 +17,6 @@ export const CallProvider = ({ children }) => {
   const [activeParticipants, setActiveParticipants] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isConnecting, setIsConnecting] = useState(true);
 
   // WebRTC State
@@ -87,13 +86,21 @@ export const CallProvider = ({ children }) => {
   }, [activeCallGroup, activeParticipants, cleanupConnections, leaveCallFirestore]);
 
   const sendSignalingMessage = async (groupId, targetUserId, data) => {
-    const callRef = collection(db, 'groups', groupId, 'calls');
-    await addDoc(callRef, {
-      ...data,
-      from: userId,
-      to: targetUserId,
-      createdAt: serverTimestamp()
-    });
+    if (!groupId || !targetUserId) {
+      console.warn("Skipping signaling: missing groupId or targetUserId", { groupId, targetUserId });
+      return;
+    }
+    try {
+      const callRef = collection(db, 'groups', groupId, 'calls');
+      await addDoc(callRef, {
+        ...data,
+        from: userId,
+        to: targetUserId,
+        createdAt: serverTimestamp()
+      });
+    } catch (err) {
+      console.error("Signaling write failed:", err);
+    }
   };
 
   const createPeerConnection = useCallback((groupId, targetUserId, stream, isInitiator) => {
@@ -164,16 +171,14 @@ export const CallProvider = ({ children }) => {
     });
   }, [userId, createPeerConnection]);
 
-  const startCall = useCallback(async (group, type = 'voice') => {
+  const startCall = useCallback(async (group) => {
     try {
-      const isVideo = type === 'video';
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: true, 
-        video: isVideo 
+        video: false 
       });
       
       setLocalStream(stream);
-      setIsVideoEnabled(isVideo);
       setActiveCallGroup(group);
       setIsCallActive(true);
       setIsMinimized(false);
@@ -192,8 +197,7 @@ export const CallProvider = ({ children }) => {
           userId, 
           username, 
           profilePic: profilePic || '', 
-          joinedAt: new Date().toISOString(),
-          isVideoEnabled: isVideo
+          joinedAt: new Date().toISOString()
         }
       ];
 
@@ -207,7 +211,9 @@ export const CallProvider = ({ children }) => {
 
       // Connect to others
       currentParticipants.forEach(p => {
-        if (p.userId !== userId) createPeerConnection(group.id, p.userId, stream, true);
+        if (p.userId && p.userId !== userId) {
+          createPeerConnection(group.id, p.userId, stream, true);
+        }
       });
 
       // Announcements
@@ -215,7 +221,7 @@ export const CallProvider = ({ children }) => {
         groupId: group.id,
         senderId: 'system',
         senderName: 'System',
-        text: `${username} ${group.currentCall?.active ? 'joined' : 'started'} a ${type} call`,
+        text: `${username} ${group.currentCall?.active ? 'joined' : 'started'} a voice call`,
         type: 'system',
         createdAt: serverTimestamp()
       });
@@ -231,7 +237,7 @@ export const CallProvider = ({ children }) => {
           setActiveParticipants(participants);
           
           participants.forEach(p => {
-            if (p.userId !== userId && !peerConnections.current[p.userId]) {
+            if (p.userId && p.userId !== userId && !peerConnections.current[p.userId]) {
               createPeerConnection(group.id, p.userId, stream, false);
             }
           });
@@ -273,43 +279,6 @@ export const CallProvider = ({ children }) => {
   };
 
   const toggleSpeaker = () => setIsSpeakerOn(!isSpeakerOn);
-  
-  const toggleVideo = useCallback(async () => {
-    if (!localStream) return;
-    
-    const videoTrack = localStream.getVideoTracks()[0];
-    if (videoTrack) {
-      videoTrack.enabled = !videoTrack.enabled;
-      setIsVideoEnabled(videoTrack.enabled);
-      
-      // Update Firestore so others know our video status
-      if (activeCallGroup) {
-        const groupRef = doc(db, 'groups', activeCallGroup.id);
-        const updatedParticipants = activeParticipants.map(p => 
-          p.userId === userId ? { ...p, isVideoEnabled: videoTrack.enabled } : p
-        );
-        await updateDoc(groupRef, { 'currentCall.participants': updatedParticipants });
-      }
-    } else if (!isVideoEnabled) {
-      // Try to enable camera if it wasn't started
-      try {
-        const newStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        const newVideoTrack = newStream.getVideoTracks()[0];
-        
-        localStream.addTrack(newVideoTrack);
-        
-        // Notify peer connections
-        Object.values(peerConnections.current).forEach(pc => {
-          pc.addTrack(newVideoTrack, localStream);
-        });
-        
-        setIsVideoEnabled(true);
-      } catch (err) {
-        showNotification("Could not access camera", "error");
-      }
-    }
-  }, [localStream, activeCallGroup, activeParticipants, userId, isVideoEnabled, showNotification]);
-
   const toggleMinimize = () => setIsMinimized(!isMinimized);
 
   const value = {
@@ -320,7 +289,6 @@ export const CallProvider = ({ children }) => {
     activeParticipants,
     isMuted,
     isSpeakerOn,
-    isVideoEnabled,
     isConnecting,
     localStream,
     remoteStreams,
@@ -328,7 +296,6 @@ export const CallProvider = ({ children }) => {
     endCall,
     toggleMute,
     toggleSpeaker,
-    toggleVideo,
     toggleMinimize
   };
 
