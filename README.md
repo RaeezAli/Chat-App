@@ -1,86 +1,43 @@
-# 🚀 High-Performance Group Chat App
+# 🚀 Ultra-Premium Real-Time Chat & Calling App
 
-This project is a state-of-the-art, real-time group chat application built from scratch in **under 1 hour** as a demonstration of the power and intelligence of **Antigravity**.
+A state-of-the-art, high-performance group chat application with **Persistent Voice Calling**, built with a focus on speed, premium aesthetics, and seamless user experience.
 
-## 🌟 Built by Antigravity
+![Premium UI Showcase](https://raw.githubusercontent.com/RaeezAli/Chat-App/main/public/preview-placeholder.png)
 
-This entire codebase—including the architecture, the responsive UI, the real-time synchronization, and the multi-media integration—was designed and implemented by **Antigravity**. It serves as a testing ground to showcase how a complex, production-ready application can be scaffolded and refined in record time.
+## ✨ Advanced Features
 
-## ✨ Key Features
+### 📞 Persistent Voice Calling (WebRTC)
 
-- **Real-Time Messaging**: Instant sync across devices using Firestore `onSnapshot`.
-- **Group Management**:
-  - Create and join groups via unique invite codes.
-  - Role-based permissions (Admin vs. Member).
-  - Admin controls for group deletion and message purging.
-- **Rich Media Integration**:
-  - Direct uploads of images, videos, and documents via **Cloudinary**.
-  - Live media previews in chat bubbles.
-- **Premium User Experience**:
-  - **Responsive Design**: Mobile-first UI with smooth slide transitions.
-  - **Deferred Onboarding**: Explore the app before being prompted for a username.
-  - **Emoji Support**: Integrated `emoji-mart` for expressive communication.
-- **Data Integrity**:
-  - Duplicate member prevention.
-  - Persistent message history and optimistic UI updates.
+- **Background Persistence**: Calls stay active even when switching between different chat groups or navigating the app.
+- **Draggable Call Modal**: A fully moveable minimized widget (bubble on mobile, window on desktop) that supports both mouse and touch dragging.
+- **Real-time Signaling**: Optimized WebRTC signaling via Firebase for instant connectivity.
+- **Privacy First**: Explicit microphone access only; video functionality has been removed for a clean voice-only experience.
 
-## 🛠️ Tech Stack
+### 🎨 Premium UI/UX
 
-- **Frontend**: React 18 (Vite + SWC)
-- **Styling**: Tailwind CSS (Mobile-responsive, Dark Mode)
-- **Backend/Database**: Firebase (Firestore, Anonymous Auth)
-- **Media Storage**: Cloudinary (Unsigned uploads)
-- **Icons/Components**: Emoji Mart, Heroicons
+- **OLED Dark Mode**: A stunning deep-black theme (`gray-950`) optimized for OLED screens with high-contrast elements.
+- **Glassmorphism**: Elegant blur effects and translucent overlays for a modern, airy feel.
+- **Smooth Animations**: Powered by Framer Motion for liquid-smooth transitions, slide-ins, and micro-interactions.
+- **Skeleton Loading**: High-fidelity placeholder states for a perceived performance boost.
 
-## 🚀 Getting Started
+### 💬 Rich Messaging Experience
 
-### 1. Prerequisites
+- **Reactions & Replies**: Long-press or swipe messages to react with emojis or start a threaded reply.
+- **Real-Time Sync**: Instant message delivery and reaction updates using optimized Firebase listeners.
+- **Media Integration**: Upload images, videos, and files directly via Cloudinary integration with live previews.
+- **Typing Indicators**: See who's active in the chat in real-time.
 
-- Node.js installed.
-- A Firebase project.
-- A Cloudinary account.
+### 📱 Mobile-First Design
 
-### 2. Configuration
+- **Swipe Actions**: Swipe right on any message to reply; swipe left on the header to see group info.
+- **Optimized Keyboard Handling**: Message input and UI layouts adjust seamlessly to mobile keyboards.
+- **Touch Dragging**: Move the call bubble with intuitive finger gestures.
 
-Create a `.env` file in the root directory:
+## 🛠️ Technical Stack
 
-```env
-VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
-VITE_CLOUDINARY_UPLOAD_PRESET=your_unsigned_preset
-```
-
-Update your Firebase configuration in `src/firebase/config.js`.
-
-### 3. Firestore Rules
-
-Deploy these rules to allow anonymous group management:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /groups/{groupId} {
-      allow read, create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null && resource.data.createdBy == request.auth.uid;
-    }
-    match /messages/{messageId} {
-      allow read, create, delete: if request.auth != null;
-    }
-  }
-}
-```
-
-### 4. Installation & Running
-
-```bash
-# Install dependencies
-npm install
-
-# Run in development mode
-npm run dev
-```
-
-## 📜 License
-
-This project was created for demonstration and testing purposes.
+- **Frontend**: [React 18](https://reactjs.org/) + [Vite](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) + [Framer Motion](https://www.framer.com/motion/)
+- **Backend**: [Firebase Firestore](https://firebase.google.com/products/firestore) & [Anonymous Auth](https://firebase.google.com/products/auth)
+- **Real-Time Audio**: [WebRTC](https://webrtc.org/) (Multi-Peer Mesh)
+- **Media Storage**: [Cloudinary](https://cloudinary.com/)
+- **Icons**: [Heroicons](https://heroicons.com/) & [Emoji Mart](https://github.com/missive/emoji-mart)
