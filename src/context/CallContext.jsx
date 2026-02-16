@@ -17,6 +17,7 @@ export const CallProvider = ({ children }) => {
   const [activeParticipants, setActiveParticipants] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isConnecting, setIsConnecting] = useState(true);
 
   // WebRTC State
@@ -112,6 +113,13 @@ export const CallProvider = ({ children }) => {
       setIsConnecting(false);
     };
 
+    pc.oniceconnectionstatechange = () => {
+      console.log(`ICE state with ${targetUserId}: ${pc.iceConnectionState}`);
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+        setIsConnecting(false);
+      }
+    };
+
     pc.onconnectionstatechange = () => {
       if (pc.connectionState === 'connected') setIsConnecting(false);
     };
@@ -156,10 +164,16 @@ export const CallProvider = ({ children }) => {
     });
   }, [userId, createPeerConnection]);
 
-  const startCall = useCallback(async (group) => {
+  const startCall = useCallback(async (group, type = 'voice') => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const isVideo = type === 'video';
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: true, 
+        video: isVideo 
+      });
+      
       setLocalStream(stream);
+      setIsVideoEnabled(isVideo);
       setActiveCallGroup(group);
       setIsCallActive(true);
       setIsMinimized(false);
@@ -174,7 +188,13 @@ export const CallProvider = ({ children }) => {
       const currentParticipants = group.currentCall?.participants || [];
       const newParticipants = [
         ...currentParticipants,
-        { userId, username, profilePic: profilePic || '', joinedAt: new Date().toISOString() }
+        { 
+          userId, 
+          username, 
+          profilePic: profilePic || '', 
+          joinedAt: new Date().toISOString(),
+          isVideoEnabled: isVideo
+        }
       ];
 
       await updateDoc(groupRef, {
@@ -195,7 +215,7 @@ export const CallProvider = ({ children }) => {
         groupId: group.id,
         senderId: 'system',
         senderName: 'System',
-        text: `${username} ${group.currentCall?.active ? 'joined the' : 'started a'} voice call`,
+        text: `${username} ${group.currentCall?.active ? 'joined' : 'started'} a ${type} call`,
         type: 'system',
         createdAt: serverTimestamp()
       });
@@ -253,6 +273,43 @@ export const CallProvider = ({ children }) => {
   };
 
   const toggleSpeaker = () => setIsSpeakerOn(!isSpeakerOn);
+  
+  const toggleVideo = useCallback(async () => {
+    if (!localStream) return;
+    
+    const videoTrack = localStream.getVideoTracks()[0];
+    if (videoTrack) {
+      videoTrack.enabled = !videoTrack.enabled;
+      setIsVideoEnabled(videoTrack.enabled);
+      
+      // Update Firestore so others know our video status
+      if (activeCallGroup) {
+        const groupRef = doc(db, 'groups', activeCallGroup.id);
+        const updatedParticipants = activeParticipants.map(p => 
+          p.userId === userId ? { ...p, isVideoEnabled: videoTrack.enabled } : p
+        );
+        await updateDoc(groupRef, { 'currentCall.participants': updatedParticipants });
+      }
+    } else if (!isVideoEnabled) {
+      // Try to enable camera if it wasn't started
+      try {
+        const newStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const newVideoTrack = newStream.getVideoTracks()[0];
+        
+        localStream.addTrack(newVideoTrack);
+        
+        // Notify peer connections
+        Object.values(peerConnections.current).forEach(pc => {
+          pc.addTrack(newVideoTrack, localStream);
+        });
+        
+        setIsVideoEnabled(true);
+      } catch (err) {
+        showNotification("Could not access camera", "error");
+      }
+    }
+  }, [localStream, activeCallGroup, activeParticipants, userId, isVideoEnabled, showNotification]);
+
   const toggleMinimize = () => setIsMinimized(!isMinimized);
 
   const value = {
@@ -263,6 +320,7 @@ export const CallProvider = ({ children }) => {
     activeParticipants,
     isMuted,
     isSpeakerOn,
+    isVideoEnabled,
     isConnecting,
     localStream,
     remoteStreams,
@@ -270,6 +328,7 @@ export const CallProvider = ({ children }) => {
     endCall,
     toggleMute,
     toggleSpeaker,
+    toggleVideo,
     toggleMinimize
   };
 
